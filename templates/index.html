@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>النموذج الجرداني - خرائط الطقس والأمطار</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #1f1f1f;
+            padding: 15px 30px;
+            border-bottom: 2px solid #00a800;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { margin: 0; font-size: 22px; color: #00a800; }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .viewer-card {
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            padding: 15px;
+            max-width: 1000px;
+            width: 100%;
+        }
+        .map-container {
+            width: 100%;
+            text-align: center;
+            min-height: 500px;
+            background-color: #000;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .map-container img {
+            max-width: 100%;
+            height: auto;
+        }
+        /* Meteologix Style Time Controls */
+        .controls-panel {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+        }
+        .time-btn {
+            background-color: #2a2a2a;
+            color: #ccc;
+            border: 1px solid #444;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+        .time-btn:hover, .time-btn.active {
+            background-color: #00a800;
+            color: #fff;
+            border-color: #00a800;
+        }
+        .playback-tools {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        .play-btn {
+            background-color: #008800;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>النموذج الجرداني - Jordanian Weather</h1>
+    <span>توقعات تراكم الأمطار (GFS REFC)</span>
+</header>
+
+<div class="container">
+    <div class="viewer-card">
+        <div class="playback-tools">
+            <button class="play-btn" id="playBtn" onclick="togglePlay()">تشغيل التتابع ▶</button>
+            <span id="currentStepText">الساعة: --</span>
+        </div>
+
+        <div class="map-container">
+            <img id="mapImage" src="" alt="جاري تحميل الخريطة...">
+        </div>
+
+        <div class="controls-panel">
+            <div class="btn-group" id="timeButtons"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let mapsData = [];
+    let currentIndex = 0;
+    let isPlaying = false;
+    let timer = null;
+
+    async function loadMaps() {
+        const response = await fetch('/api/maps');
+        mapsData = await response.json();
+        
+        if (mapsData.length > 0) {
+            renderButtons();
+            selectMap(0);
+        }
+    }
+
+    function renderButtons() {
+        const container = document.getElementById('timeButtons');
+        container.innerHTML = '';
+        
+        mapsData.forEach((item, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'time-btn';
+            btn.innerText = item.hour;
+            btn.onclick = () => selectMap(index);
+            btn.id = `btn-${index}`;
+            container.appendChild(btn);
+        });
+    }
+
+    function selectMap(index) {
+        currentIndex = index;
+        const item = mapsData[index];
+        document.getElementById('mapImage').src = item.url;
+        document.getElementById('currentStepText').innerText = `التوقع: ${item.hour}`;
+
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+        const activeBtn = document.getElementById(`btn-${index}`);
+        if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    function togglePlay() {
+        const btn = document.getElementById('playBtn');
+        if (isPlaying) {
+            clearInterval(timer);
+            isPlaying = false;
+            btn.innerText = 'تشغيل التتابع ▶';
+        } else {
+            isPlaying = true;
+            btn.innerText = 'إيقاف ⏸';
+            timer = setInterval(() => {
+                currentIndex = (currentIndex + 1) % mapsData.length;
+                selectMap(currentIndex);
+            }, 800);
+        }
+    }
+
+    loadMaps();
+</script>
+
+</body>
+</html>
