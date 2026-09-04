@@ -1,0 +1,11 @@
+Flask==3.0.2
+gunicorn==21.2.0
+numpy==1.26.4
+xarray==2024.2.0
+matplotlib==3.8.3
+cartopy==0.22.0
+arabic-reshaper==3.0.0
+python-bidi==0.4.2
+requests==2.31.0
+cfgrib==0.9.10.4
+eccodes==1.6.1
